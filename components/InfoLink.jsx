@@ -1,0 +1,296 @@
+"use client";
+import React, { useState, useEffect, useMemo } from "react";
+import { QRCodeCanvas } from "qrcode.react";
+import {
+  Coffee, MapPin, Star, Plus, Minus, ShoppingBag, X, Share2,
+  Gift, ChevronRight, Search, Wallet, Clock, ScanLine, QrCode, Sparkles,
+} from "lucide-react";
+
+const money = (n) => "$" + Number(n).toLocaleString("es-CO");
+
+/* Sello de cera (elemento firma de la marca) */
+function WaxSeal({ filled, index }) {
+  const rot = filled ? (index * 37) % 12 - 6 : 0;
+  return (
+    <div className={"seal " + (filled ? "seal-on" : "seal-off")} style={{ "--rot": rot + "deg" }}>
+      {filled ? <Coffee size={20} strokeWidth={2.4} /> : <span className="seal-dot" />}
+    </div>
+  );
+}
+
+export default function InfoLink({ data, handle }) {
+  const { negocio, categorias, promos } = data;
+  const meta = negocio.meta_sellos;
+
+  const [token, setToken] = useState(null);
+  const [sellos, setSellos] = useState(0);
+  const [premios, setPremios] = useState(0);
+
+  const [activeCat, setActiveCat] = useState(categorias[0]?.id);
+  const [q, setQ] = useState("");
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [wallet, setWallet] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [walletBusy, setWalletBusy] = useState(false);
+  const [walletErr, setWalletErr] = useState("");
+
+  // Google Wallet: pide el link oficial y redirige a "Add to Google Wallet".
+  async function addGoogle() {
+    if (!token) return;
+    setWalletBusy(true); setWalletErr("");
+    try {
+      const r = await fetch(`/api/wallet/google?token=${token}`).then((x) => x.json());
+      if (r.saveUrl) window.location.href = r.saveUrl;
+      else setWalletErr(r.error || "No disponible");
+    } catch { setWalletErr("No se pudo conectar"); }
+    finally { setWalletBusy(false); }
+  }
+
+  // Al cargar: recupera (o crea) la tarjeta del cliente. Token guardado en el navegador.
+  useEffect(() => {
+    (async () => {
+      try {
+        const key = "sello:token:" + handle;
+        let t = localStorage.getItem(key);
+        if (t) {
+          const r = await fetch("/api/tarjeta", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ handle, token: t }),
+          }).then((x) => x.json());
+          if (r && !r.error) { setSellos(r.sellos); setPremios(r.premios_ganados); setToken(t); return; }
+        }
+        const c = await fetch("/api/tarjeta", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ handle }),
+        }).then((x) => x.json());
+        if (c?.token) {
+          localStorage.setItem(key, c.token);
+          setToken(c.token); setSellos(c.sellos); setPremios(c.premios_ganados);
+        }
+      } catch { /* si falla, sigue como escaparate */ }
+    })();
+  }, [handle]);
+
+  // Refresca el estado al abrir el QR (el staff pudo haber sellado)
+  async function refrescar() {
+    if (!token) return;
+    try {
+      const r = await fetch("/api/tarjeta", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ handle, token }),
+      }).then((x) => x.json());
+      if (r && !r.error) { setSellos(r.sellos); setPremios(r.premios_ganados); }
+    } catch {}
+  }
+
+  // Carrito
+  const cartTotal = useMemo(() => cart.reduce((t, i) => t + i.precio * i.qty, 0), [cart]);
+  const cartCount = useMemo(() => cart.reduce((t, i) => t + i.qty, 0), [cart]);
+  const addToCart = (it) => setCart((c) => {
+    const f = c.find((x) => x.id === it.id);
+    return f ? c.map((x) => x.id === it.id ? { ...x, qty: x.qty + 1 } : x) : [...c, { ...it, qty: 1 }];
+  });
+  const dec = (id) => setCart((c) => c.map((x) => x.id === id ? { ...x, qty: x.qty - 1 } : x).filter((x) => x.qty > 0));
+
+  const sendOrder = async () => {
+    try {
+      const r = await fetch("/api/pedido", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ handle, items: cart, total: cartTotal, token }),
+      }).then((x) => x.json());
+      if (r?.estado && !r.estado.error) { setSellos(r.estado.sellos); setPremios(r.estado.premios_ganados); }
+    } catch {}
+    setCart([]); setCartOpen(false);
+  };
+
+  const items = useMemo(() => {
+    if (q.trim()) return categorias.flatMap((c) => c.items).filter((i) => i.nombre.toLowerCase().includes(q.toLowerCase()));
+    return categorias.find((c) => c.id === activeCat)?.items ?? [];
+  }, [q, activeCat, categorias]);
+
+  const pct = Math.min(100, (sellos / meta) * 100);
+  const left = meta - sellos;
+
+  return (
+    <div className="app">
+      <div className="biz-head">
+        <div className="biz-logo">{negocio.logo_emoji || <Coffee size={22} />}</div>
+        <div>
+          <h1 className="biz-name">{negocio.nombre}</h1>
+          <div className="biz-meta">
+            <span className="open">● Abierto</span>
+            <Star size={12} className="gold" /> {negocio.rating}
+            <span className="dim">({negocio.reviews})</span>
+            <MapPin size={12} /> {negocio.ciudad}
+          </div>
+        </div>
+      </div>
+
+      {/* TARJETA DE SELLOS */}
+      <div className="card">
+        <div className="card-perf" />
+        <div className="card-head">
+          <span className="eyebrow">Tarjeta de fidelidad</span>
+          <span className="card-count">{sellos}<i>/{meta}</i></span>
+        </div>
+        <div className="seals">
+          {[...Array(meta)].map((_, i) => <WaxSeal key={i} index={i} filled={i < sellos} />)}
+        </div>
+        <div className="prog"><span style={{ width: pct + "%" }} /></div>
+        <p className="card-note">
+          {left > 0
+            ? <>Te faltan <b>{left} sello{left > 1 ? "s" : ""}</b> para <b>{negocio.premio}</b></>
+            : <>¡Listo! Muestra tu <b>QR</b> al cajero para canjear 🎉</>}
+        </p>
+        <div className="card-actions">
+          <button className="btn-primary" onClick={() => { refrescar(); setShowQR(true); }}>
+            <QrCode size={16} /> Mi QR
+          </button>
+          <button className="btn-ghost" onClick={() => setWallet(true)}>
+            <Wallet size={16} /> Wallet
+          </button>
+        </div>
+        {premios > 0 && (
+          <div className="rewards-badge"><Sparkles size={12} /> {premios} premio{premios > 1 ? "s" : ""} ganado{premios > 1 ? "s" : ""}</div>
+        )}
+      </div>
+
+      <div className="quick">
+        <a className="qa"><ScanLine size={18} /><span>Escanear</span></a>
+        <a className="qa"><MapPin size={18} /><span>Llegar</span></a>
+        <a className="qa"><Clock size={18} /><span>Horarios</span></a>
+        <a className="qa wa" href={negocio.whatsapp ? `https://wa.me/${negocio.whatsapp}` : "#"} target="_blank" rel="noreferrer">
+          <Coffee size={18} /><span>WhatsApp</span>
+        </a>
+      </div>
+
+      {promos.length > 0 && (
+        <div className="block">
+          <h2 className="h2">Promociones</h2>
+          {promos.map((p, i) => (
+            <div className="promo" key={i}>
+              <span className="promo-e">{p.emoji}</span>
+              <div><b>{p.titulo}</b><small>{p.detalle}</small></div>
+              <ChevronRight size={16} className="dim" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="block">
+        <div className="menu-top">
+          <h2 className="h2">Menú</h2>
+          <div className="search">
+            <Search size={14} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar…" />
+          </div>
+        </div>
+        {!q && (
+          <div className="cats">
+            {categorias.map((c) => (
+              <button key={c.id} className={activeCat === c.id ? "cat on" : "cat"} onClick={() => setActiveCat(c.id)}>
+                {c.nombre}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="items">
+          {items.map((it) => (
+            <div className="item" key={it.id}>
+              {it.img_url && <img src={it.img_url} alt={it.nombre} loading="lazy" />}
+              <div className="item-body">
+                {it.tag && <span className="item-tag">{it.tag}</span>}
+                <b>{it.nombre}</b>
+                <span className="price">{money(it.precio)}</span>
+              </div>
+              <button className="add" onClick={() => addToCart(it)}><Plus size={16} /></button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="refer">
+        <Share2 size={18} />
+        <div>
+          <b>Trae un amigo, ganen ambos</b>
+          <small>Tú y tu amigo reciben <b>1 sello</b> extra.</small>
+        </div>
+        <button className="btn-mini">Compartir</button>
+      </div>
+
+      <footer className="foot">Hecho con <b>SELLO</b> · tu fidelización en el wallet</footer>
+
+      {cartCount > 0 && (
+        <button className="cart-fab" onClick={() => setCartOpen(true)}>
+          <ShoppingBag size={18} /> {cartCount} · {money(cartTotal)}
+        </button>
+      )}
+
+      {cartOpen && (
+        <div className="sheet-bg" onClick={(e) => e.target.classList.contains("sheet-bg") && setCartOpen(false)}>
+          <div className="sheet">
+            <div className="sheet-head"><b>Tu pedido</b><button onClick={() => setCartOpen(false)}><X size={18} /></button></div>
+            {cart.map((i) => (
+              <div className="cart-row" key={i.id}>
+                <span>{i.nombre}</span>
+                <div className="qty">
+                  <button onClick={() => dec(i.id)}><Minus size={14} /></button>
+                  <b>{i.qty}</b>
+                  <button onClick={() => addToCart(i)}><Plus size={14} /></button>
+                </div>
+                <span className="cart-p">{money(i.precio * i.qty)}</span>
+              </div>
+            ))}
+            <button className="btn-primary big" onClick={sendOrder}>
+              Enviar pedido · {money(cartTotal)} <ChevronRight size={18} />
+            </button>
+            <p className="fine">Al pedir sumas <b>1 sello</b> automáticamente.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Mi QR: lo que el staff escanea para sellar */}
+      {showQR && (
+        <div className="sheet-bg" onClick={(e) => e.target.classList.contains("sheet-bg") && setShowQR(false)}>
+          <div className="sheet qr-sheet">
+            <div className="sheet-head"><b>Tu tarjeta</b><button onClick={() => setShowQR(false)}><X size={18} /></button></div>
+            <div className="qr-frame">
+              {token
+                ? <QRCodeCanvas value={token} size={188} bgColor="#FFFDF8" fgColor="#241B14" level="M" includeMargin />
+                : <span className="muted">Generando…</span>}
+            </div>
+            <p className="qr-count">{sellos}/{meta} sellos</p>
+            <p className="fine">Muéstraselo al cajero para que sume tu sello.</p>
+          </div>
+        </div>
+      )}
+
+      {wallet && (
+        <div className="sheet-bg" onClick={(e) => e.target.classList.contains("sheet-bg") && setWallet(false)}>
+          <div className="sheet">
+            <div className="sheet-head"><b>Agregar a tu Wallet</b><button onClick={() => setWallet(false)}><X size={18} /></button></div>
+            <div className="wallet-pass">
+              <div className="wp-top">
+                <span className="wp-logo"><Coffee size={16} /> {negocio.nombre}</span>
+                <span className="wp-kind">SELLO</span>
+              </div>
+              <div className="wp-stamps">{sellos}/{meta} sellos</div>
+              <div className="wp-row"><span>Premio</span><b>{negocio.premio}</b></div>
+            </div>
+            <div className="wallet-btns">
+              <a className="btn-wallet apple" href={token ? `/api/wallet/apple?token=${token}` : undefined}>
+                <Wallet size={16} /> Apple Wallet
+              </a>
+              <button className="btn-wallet google" onClick={addGoogle} disabled={walletBusy}>
+                <Wallet size={16} /> {walletBusy ? "Abriendo…" : "Google Wallet"}
+              </button>
+            </div>
+            {walletErr && <p className="fine" style={{ color: "#b3261e" }}>{walletErr}</p>}
+            <p className="fine">Sin apps. La tarjeta vive en el wallet y se actualiza sola.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

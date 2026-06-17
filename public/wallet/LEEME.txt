@@ -1,0 +1,5 @@
+Coloca aquí los íconos del pase de Apple Wallet:
+- icon.png  (obligatorio, 29x29 o mayor cuadrado)
+- logo.png  (opcional, se ve arriba del pase)
+Apple NO genera el .pkpass sin icon.png.
+Google Wallet no necesita estos archivos.
