@@ -28,8 +28,17 @@ export default function Registro() {
         setBusy(false); return;
       }
 
+      // Si el admin creó el negocio de antemano, llega ?negocio=handle en la URL.
+      // Lo pasamos al link de confirmación para que /confirmado lo reclame
+      // automáticamente cuando el cliente confirme su correo.
+      const negocioParam = new URLSearchParams(window.location.search).get("negocio") || "";
+      const redirectTo = negocioParam
+        ? `${window.location.origin}/confirmado?negocio=${negocioParam}`
+        : `${window.location.origin}/confirmado`;
+
       const { data: signData, error: signErr } = await supabase.auth.signUp({
         email: form.correo, password: form.clave,
+        options: { emailRedirectTo: redirectTo },
       });
       if (signErr) throw signErr;
 
