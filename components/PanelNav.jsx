@@ -1,8 +1,9 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
-import { LayoutDashboard, Receipt, UtensilsCrossed, Users, ScanLine, LogOut } from "lucide-react";
+import { LayoutDashboard, Receipt, UtensilsCrossed, Users, ScanLine, LogOut, CreditCard } from "lucide-react";
 
 const LINKS = [
   { href: "/panel", label: "Resumen", icon: LayoutDashboard },
@@ -15,6 +16,16 @@ const LINKS = [
 export default function PanelNav({ email }) {
   const path = usePathname();
   const router = useRouter();
+  const [esAdmin, setEsAdmin] = useState(false);
+
+  // "Pagos" solo se muestra si la cuenta es administradora de la plataforma
+  // (tú). Los dueños de cada negocio nunca ven este link.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabaseBrowser().rpc("es_admin");
+      setEsAdmin(!!data);
+    })();
+  }, []);
 
   async function salir() {
     await supabaseBrowser().auth.signOut();
@@ -22,11 +33,15 @@ export default function PanelNav({ email }) {
     router.refresh();
   }
 
+  const links = esAdmin
+    ? [...LINKS, { href: "/panel/pagos", label: "Pagos", icon: CreditCard }]
+    : LINKS;
+
   return (
     <aside className="pnav">
       <div className="pnav-logo">SELLO</div>
       <nav>
-        {LINKS.map((l) => {
+        {links.map((l) => {
           const Icon = l.icon;
           const on = path === l.href;
           return (

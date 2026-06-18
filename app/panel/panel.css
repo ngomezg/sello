@@ -132,3 +132,25 @@
 .onboard p{font-size:12.5px;color:var(--ink2);margin:0 0 16px;line-height:1.5}
 .onboard p code{background:var(--cream);padding:1px 5px;border-radius:5px;font-family:'Space Mono',monospace}
 .onboard .inp{text-align:left}
+
+/* ---- Pagos (solo administrador) ---- */
+.pago-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e7d9bf;
+  border-radius:14px;padding:12px 14px;margin-bottom:9px;flex-wrap:wrap}
+.pago-info{flex:1;min-width:160px}
+.pago-info b{font-size:14px;display:block}
+.pago-info small{font-size:11px;color:var(--ink2)}
+.pago-badge{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.pago-badge.ok{background:#e3f3e6;color:#1f7a3d}
+.pago-badge.warn{background:#fdf0d8;color:#9a6a0a}
+.pago-badge.bad{background:#fbe4e4;color:#9a2330}
+.pago-vence{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--ink2);white-space:nowrap}
+.pago-periodo{display:flex;gap:4px;align-items:center}
+.pago-cant{width:52px;padding:7px 6px;border:1px solid var(--line);border-radius:9px;
+  font-size:13px;font-family:'Space Mono',monospace;text-align:center}
+.pago-unidad{padding:7px 6px;border:1px solid var(--line);border-radius:9px;
+  font-size:12px;background:#fff;cursor:pointer}
+.btn-mini{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:9px;
+  font-size:12px;font-weight:700;color:#fff;border:none;cursor:pointer;white-space:nowrap}
+.btn-mini.ok{background:#1f7a3d}
+.btn-mini.bad{background:#9a2330}
+.btn-mini:disabled{opacity:.5;cursor:not-allowed}
