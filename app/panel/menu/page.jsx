@@ -1,27 +1,26 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import {
-  Plus, Trash2, Pencil, Check, X, GripVertical, Eye, EyeOff,
+  Plus, Trash2, Pencil, Check, X, Eye, EyeOff, Upload, GripVertical,
 } from "lucide-react";
 
 const money = (n) => "$" + Number(n || 0).toLocaleString("es-CO");
 
 export default function MenuEditor() {
-  const supabase = supabaseBrowser();
-  const [negocio, setNegocio] = useState(null);
-  const [cats, setCats] = useState([]);
-  const [nuevaCat, setNuevaCat] = useState("");
-  const [editItem, setEditItem] = useState(null); // {categoria_id, ...item} o null
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(true);
+  const supabase   = supabaseBrowser();
+  const fileRef    = useRef(null);
+  const [negocio, setNegocio]     = useState(null);
+  const [cats, setCats]           = useState([]);
+  const [nuevaCat, setNuevaCat]   = useState("");
+  const [editItem, setEditItem]   = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg]             = useState("");
+  const [loading, setLoading]     = useState(true);
 
   const toast = (t) => { setMsg(t); setTimeout(() => setMsg(""), 2500); };
 
-  // Carga el negocio del dueño + sus categorías con productos
   const cargar = useCallback(async () => {
-    // Filtra por el dueño: 'negocios' tiene lectura pública, sin este filtro
-    // .single() fallaría al haber varios negocios activos.
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const { data: n } = await supabase.from("negocios")
@@ -32,7 +31,6 @@ export default function MenuEditor() {
       .from("menu_categorias")
       .select("id,nombre,orden,menu_items(id,nombre,precio,tag,img_url,disponible,orden)")
       .eq("negocio_id", n.id).order("orden");
-    // Ordena los productos dentro de cada categoría
     (data || []).forEach((c) => c.menu_items?.sort((a, b) => (a.orden || 0) - (b.orden || 0)));
     setCats(data || []);
     setLoading(false);
@@ -40,13 +38,32 @@ export default function MenuEditor() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // --- Categorías ---
+  // ── Sube la imagen al bucket "menu-imgs/{negocio_id}/{timestamp}.ext"
+  // y devuelve la URL pública para guardarla en img_url del item.
+  async function subirImagen(file) {
+    if (!file || !negocio) return;
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      toast(`La imagen pesa más de ${MAX_MB}MB. Elige una más pequeña.`); return;
+    }
+    setUploading(true);
+    const ext  = file.name.split(".").pop().toLowerCase();
+    const path = `${negocio.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("menu-imgs").upload(path, file, { upsert: true, contentType: file.type });
+    if (error) { toast("No se pudo subir la imagen"); setUploading(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from("menu-imgs").getPublicUrl(path);
+    setEditItem((prev) => ({ ...prev, img_url: publicUrl }));
+    setUploading(false);
+    toast("Imagen subida");
+  }
+
+  // ── Categorías ──
   async function addCat() {
     const nombre = nuevaCat.trim();
     if (!nombre || !negocio) return;
-    const { error } = await supabase.from("menu_categorias")
+    await supabase.from("menu_categorias")
       .insert({ negocio_id: negocio.id, nombre, orden: cats.length });
-    if (error) return toast("No se pudo crear");
     setNuevaCat(""); toast("Categoría creada"); cargar();
   }
   async function renameCat(c, nombre) {
@@ -56,11 +73,11 @@ export default function MenuEditor() {
   }
   async function delCat(c) {
     if (!confirm(`¿Eliminar "${c.nombre}" y sus productos?`)) return;
-    await supabase.from("menu_categorias").delete().eq("id", c.id); // borra productos en cascada
+    await supabase.from("menu_categorias").delete().eq("id", c.id);
     toast("Categoría eliminada"); cargar();
   }
 
-  // --- Productos ---
+  // ── Productos ──
   function nuevoItem(categoria_id) {
     setEditItem({ categoria_id, nombre: "", precio: "", tag: "", img_url: "", disponible: true });
   }
@@ -109,7 +126,6 @@ export default function MenuEditor() {
         </a>
       </header>
 
-      {/* Crear categoría */}
       <div className="pcard">
         <div className="row-add">
           <input className="inp" placeholder="Nueva categoría (ej: Bebidas)"
@@ -124,7 +140,6 @@ export default function MenuEditor() {
       {cats.map((c) => (
         <div className="mcat" key={c.id}>
           <CatHeader c={c} onRename={renameCat} onDelete={() => delCat(c)} />
-
           {(c.menu_items || []).map((it) => (
             <div className="mitem" key={it.id}>
               {it.img_url
@@ -145,39 +160,73 @@ export default function MenuEditor() {
               </button>
             </div>
           ))}
-
           <button className="add-item" onClick={() => nuevoItem(c.id)}>
             <Plus size={15} /> Agregar producto
           </button>
         </div>
       ))}
 
-      {/* Sheet de edición de producto */}
+      {/* ── Sheet edición de producto ── */}
       {editItem && (
-        <div className="sheet-bg" onClick={(e) => e.target.classList.contains("sheet-bg") && setEditItem(null)}>
+        <div className="sheet-bg"
+          onClick={(e) => e.target.classList.contains("sheet-bg") && setEditItem(null)}>
           <div className="sheet">
             <div className="sheet-head">
               <b>{editItem.id ? "Editar producto" : "Nuevo producto"}</b>
               <button onClick={() => setEditItem(null)}><X size={18} /></button>
             </div>
+
             <label className="lbl">Nombre</label>
             <input className="inp" value={editItem.nombre}
               onChange={(e) => setEditItem({ ...editItem, nombre: e.target.value })} />
+
             <label className="lbl">Precio (COP)</label>
             <input className="inp" type="number" inputMode="numeric" value={editItem.precio}
               onChange={(e) => setEditItem({ ...editItem, precio: e.target.value })} />
+
             <label className="lbl">Etiqueta (opcional)</label>
             <input className="inp" placeholder="Nuevo, Más pedido…" value={editItem.tag || ""}
               onChange={(e) => setEditItem({ ...editItem, tag: e.target.value })} />
-            <label className="lbl">URL de imagen (opcional)</label>
-            <input className="inp" placeholder="https://…" value={editItem.img_url || ""}
-              onChange={(e) => setEditItem({ ...editItem, img_url: e.target.value })} />
+
+            {/* ── Sección de imagen mejorada ── */}
+            <label className="lbl">Imagen del producto</label>
+
+            {/* Vista previa si ya hay imagen */}
+            {editItem.img_url && (
+              <div className="img-preview">
+                <img src={editItem.img_url} alt="preview" />
+                <button className="img-remove" onClick={() => setEditItem({ ...editItem, img_url: "" })}>
+                  <X size={14} /> Quitar imagen
+                </button>
+              </div>
+            )}
+
+            {/* Botón principal: subir desde el dispositivo */}
+            <input
+              ref={fileRef} type="file" accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => subirImagen(e.target.files[0])}
+            />
+            <button className="btn-upload" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              <Upload size={15} /> {uploading ? "Subiendo…" : "Subir foto desde tu dispositivo"}
+            </button>
+
+            {/* Opción alternativa: pegar URL */}
+            <details className="url-alt">
+              <summary>O pegar una URL de imagen</summary>
+              <input className="inp" placeholder="https://…" value={editItem.img_url || ""}
+                onChange={(e) => setEditItem({ ...editItem, img_url: e.target.value })} />
+            </details>
+
             <label className="check">
               <input type="checkbox" checked={editItem.disponible}
                 onChange={(e) => setEditItem({ ...editItem, disponible: e.target.checked })} />
               Disponible
             </label>
-            <button className="btn-primary big" onClick={guardarItem}><Check size={16} /> Guardar producto</button>
+
+            <button className="btn-primary big" onClick={guardarItem} disabled={uploading}>
+              <Check size={16} /> Guardar producto
+            </button>
           </div>
         </div>
       )}
@@ -187,7 +236,6 @@ export default function MenuEditor() {
   );
 }
 
-// Cabecera de categoría con edición inline del nombre
 function CatHeader({ c, onRename, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(c.nombre);

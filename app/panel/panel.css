@@ -154,3 +154,21 @@
 .btn-mini.ok{background:#1f7a3d}
 .btn-mini.bad{background:#9a2330}
 .btn-mini:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Subida de imágenes al menú ── */
+.img-preview{position:relative;margin-bottom:10px;border-radius:12px;overflow:hidden;
+  border:1px solid var(--line)}
+.img-preview img{width:100%;max-height:160px;object-fit:cover;display:block}
+.img-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;
+  border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;gap:4px}
+.btn-upload{width:100%;padding:13px;border:2px dashed var(--line);border-radius:12px;
+  background:#faf6ef;color:var(--ink2);font-size:14px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;
+  transition:border-color .2s,background .2s}
+.btn-upload:hover:not(:disabled){border-color:var(--primary);background:#f5ede0}
+.btn-upload:disabled{opacity:.5;cursor:not-allowed}
+.url-alt{margin-bottom:10px;font-size:13px;color:var(--ink2)}
+.url-alt summary{cursor:pointer;padding:4px 0;user-select:none}
+.url-alt summary:hover{color:var(--primary)}
+.url-alt .inp{margin-top:8px}
