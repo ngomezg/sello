@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import {
   Coffee, MapPin, Star, Plus, Minus, ShoppingBag, X, Share2,
-  Gift, ChevronRight, Search, Wallet, Clock, ScanLine, QrCode, Sparkles,
+  Gift, ChevronRight, Search, Wallet, Clock, QrCode, Sparkles,
 } from "lucide-react";
 
 const money = (n) => "$" + Number(n).toLocaleString("es-CO");
@@ -34,6 +34,31 @@ export default function InfoLink({ data, handle }) {
   const [showQR, setShowQR] = useState(false);
   const [walletBusy, setWalletBusy] = useState(false);
   const [walletErr, setWalletErr] = useState("");
+  const [showHorario, setShowHorario] = useState(false);
+  const [promoSel, setPromoSel] = useState(null);
+  const [shareMsg, setShareMsg] = useState("");
+
+  // "Llegar": abre Google Maps con el nombre+ciudad del negocio.
+  // No guardamos lat/lng todavía, así que usamos búsqueda por texto (funciona bien).
+  function abrirMapa() {
+    const q = encodeURIComponent(`${negocio.nombre} ${negocio.ciudad || ""}`);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank");
+  }
+
+  // "Compartir": usa el share nativo del teléfono si existe; si no, copia el link.
+  async function compartir() {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const text = `¡Mira mi tarjeta de fidelidad en ${negocio.nombre}!`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: negocio.nombre, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareMsg("Enlace copiado");
+        setTimeout(() => setShareMsg(""), 2200);
+      }
+    } catch { /* el usuario canceló el share nativo: no es un error real */ }
+  }
 
   // Google Wallet: pide el link oficial y redirige a "Add to Google Wallet".
   async function addGoogle() {
@@ -47,11 +72,29 @@ export default function InfoLink({ data, handle }) {
     finally { setWalletBusy(false); }
   }
 
-  // Al cargar: recupera (o crea) la tarjeta del cliente. Token guardado en el navegador.
+  // Al cargar: si llega un token por URL (?t=...), el cliente está "reclamando"
+  // una tarjeta que el staff creó desde el panel — la adopta como suya.
+  // Si no, recupera (o crea) su tarjeta normal. Token guardado en el navegador.
   useEffect(() => {
     (async () => {
       try {
         const key = "sello:token:" + handle;
+        const urlToken = new URLSearchParams(window.location.search).get("t");
+
+        if (urlToken) {
+          const r = await fetch("/api/tarjeta", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ handle, token: urlToken }),
+          }).then((x) => x.json());
+          if (r && !r.error) {
+            localStorage.setItem(key, urlToken);
+            setSellos(r.sellos); setPremios(r.premios_ganados); setToken(urlToken);
+            // Limpia el ?t= de la barra de direcciones para que no se vuelva a compartir por error.
+            window.history.replaceState({}, "", window.location.pathname);
+            return;
+          }
+        }
+
         let t = localStorage.getItem(key);
         if (t) {
           const r = await fetch("/api/tarjeta", {
@@ -157,9 +200,8 @@ export default function InfoLink({ data, handle }) {
       </div>
 
       <div className="quick">
-        <a className="qa"><ScanLine size={18} /><span>Escanear</span></a>
-        <a className="qa"><MapPin size={18} /><span>Llegar</span></a>
-        <a className="qa"><Clock size={18} /><span>Horarios</span></a>
+        <button className="qa" onClick={abrirMapa}><MapPin size={18} /><span>Llegar</span></button>
+        <button className="qa" onClick={() => setShowHorario(true)}><Clock size={18} /><span>Horarios</span></button>
         <a className="qa wa" href={negocio.whatsapp ? `https://wa.me/${negocio.whatsapp}` : "#"} target="_blank" rel="noreferrer">
           <Coffee size={18} /><span>WhatsApp</span>
         </a>
@@ -169,11 +211,11 @@ export default function InfoLink({ data, handle }) {
         <div className="block">
           <h2 className="h2">Promociones</h2>
           {promos.map((p, i) => (
-            <div className="promo" key={i}>
+            <button className="promo" key={i} onClick={() => setPromoSel(p)}>
               <span className="promo-e">{p.emoji}</span>
               <div><b>{p.titulo}</b><small>{p.detalle}</small></div>
               <ChevronRight size={16} className="dim" />
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -216,8 +258,9 @@ export default function InfoLink({ data, handle }) {
           <b>Trae un amigo, ganen ambos</b>
           <small>Tú y tu amigo reciben <b>1 sello</b> extra.</small>
         </div>
-        <button className="btn-mini">Compartir</button>
+        <button className="btn-mini" onClick={compartir}>Compartir</button>
       </div>
+      {shareMsg && <p className="share-msg">{shareMsg}</p>}
 
       <footer className="foot">Hecho con <b>SELLO</b> · tu fidelización en el wallet</footer>
 
@@ -288,6 +331,28 @@ export default function InfoLink({ data, handle }) {
             </div>
             {walletErr && <p className="fine" style={{ color: "#b3261e" }}>{walletErr}</p>}
             <p className="fine">Sin apps. La tarjeta vive en el wallet y se actualiza sola.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Horarios */}
+      {showHorario && (
+        <div className="sheet-bg" onClick={(e) => e.target.classList.contains("sheet-bg") && setShowHorario(false)}>
+          <div className="sheet">
+            <div className="sheet-head"><b>Horarios</b><button onClick={() => setShowHorario(false)}><X size={18} /></button></div>
+            {negocio.horario
+              ? <p className="horario-text">{negocio.horario}</p>
+              : <p className="muted">Este negocio aún no configuró sus horarios.</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Detalle de una promo */}
+      {promoSel && (
+        <div className="sheet-bg" onClick={(e) => e.target.classList.contains("sheet-bg") && setPromoSel(null)}>
+          <div className="sheet">
+            <div className="sheet-head"><b>{promoSel.titulo}</b><button onClick={() => setPromoSel(null)}><X size={18} /></button></div>
+            <p className="horario-text">{promoSel.emoji} {promoSel.detalle}</p>
           </div>
         </div>
       )}

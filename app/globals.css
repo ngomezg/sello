@@ -68,15 +68,19 @@ img{display:block}
   color:var(--ink);background:#fff;border:1px solid var(--line);padding:12px;border-radius:13px}
 .btn-mini{background:var(--ink);color:var(--paper);font-weight:600;font-size:12px;padding:8px 14px;border-radius:10px;white-space:nowrap}
 
-.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:18px 16px 6px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:18px 16px 6px}
 .qa{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--ink2);
-  background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 4px;text-decoration:none}
+  background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 4px;text-decoration:none;
+  width:100%;font-family:inherit;cursor:pointer}
 .qa svg{color:var(--ox)} .qa.wa svg{color:#1f9d57}
 
 .block{padding:18px 16px 6px}
-.promo{display:flex;align-items:center;gap:12px;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px}
+.promo{display:flex;align-items:center;gap:12px;background:var(--cream);border:1px solid var(--line);
+  border-radius:14px;padding:12px;margin-bottom:8px;width:100%;text-align:left;font-family:inherit;cursor:pointer}
 .promo-e{font-size:22px}
 .promo b{display:block;font-size:13.5px} .promo small{font-size:11.5px;color:var(--ink2)}
+.horario-text{font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-line}
+.share-msg{text-align:center;font-size:12px;color:#1f7a3d;font-weight:600;margin:-10px 16px 10px}
 
 .menu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .search{display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--line);border-radius:11px;padding:7px 10px;color:var(--ink2)}
@@ -159,3 +163,6 @@ img{display:block}
   border-radius:18px;padding:18px;margin:6px auto 0;width:fit-content}
 .qr-count{font-family:'Space Mono',monospace;font-weight:700;color:var(--ox);margin:12px 0 0}
 .muted{color:var(--ink2);font-size:13px}
+
+.login-ok{background:#e3f3e6;color:#1f7a3d;font-size:12.5px;padding:9px;border-radius:10px;margin-bottom:10px}
+.login-fine a{color:var(--ox);font-weight:600;text-decoration:underline}

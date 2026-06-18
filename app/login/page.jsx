@@ -41,7 +41,7 @@ export default function Login() {
         <button className="btn-primary big" onClick={submit} disabled={busy}>
           <LogIn size={16} /> {busy ? "Entrando…" : "Entrar"}
         </button>
-        <p className="login-fine">¿Sin cuenta? Créala en Supabase → Authentication → Users.</p>
+        <p className="login-fine">¿Sin cuenta? <a href="/registro">Crea la tuya aquí</a>.</p>
       </div>
     </main>
   );

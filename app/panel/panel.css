@@ -123,3 +123,12 @@
   background:var(--ink);color:var(--paper);font-size:13px;font-weight:600;padding:11px 18px;border-radius:99px;
   box-shadow:0 12px 28px -10px rgba(0,0,0,.6);animation:fade .2s}
 @media(min-width:721px){.toast{bottom:24px}}
+
+/* ---- onboarding: crear negocio (reemplaza el demo "reclamar") ---- */
+.onboard{max-width:380px;margin:40px auto;background:#fff;border:1px solid #e7d9bf;border-radius:20px;
+  padding:28px 24px;text-align:center}
+.onboard-ico{color:var(--ox);margin-bottom:10px}
+.onboard h2{font-family:Fraunces,serif;font-size:20px;margin:0 0 6px}
+.onboard p{font-size:12.5px;color:var(--ink2);margin:0 0 16px;line-height:1.5}
+.onboard p code{background:var(--cream);padding:1px 5px;border-radius:5px;font-family:'Space Mono',monospace}
+.onboard .inp{text-align:left}
