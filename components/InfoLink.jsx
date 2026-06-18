@@ -25,6 +25,9 @@ export default function InfoLink({ data, handle }) {
   const [token, setToken] = useState(null);
   const [sellos, setSellos] = useState(0);
   const [premios, setPremios] = useState(0);
+  const [pushOk, setPushOk] = useState(false);       // ya suscrito
+  const [cerca, setCerca] = useState(false);          // está cerca del negocio
+  const [pushBanner, setPushBanner] = useState(false); // mostrar banner de suscripción
 
   const [activeCat, setActiveCat] = useState(categorias[0]?.id);
   const [q, setQ] = useState("");
@@ -114,6 +117,67 @@ export default function InfoLink({ data, handle }) {
       } catch { /* si falla, sigue como escaparate */ }
     })();
   }, [handle]);
+
+  // Detecta proximidad al negocio y registra el Service Worker para push.
+  // Solo se activa si el negocio tiene coordenadas (lat/lng) cargadas.
+  useEffect(() => {
+    // 1. Registrar Service Worker (necesario para push)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+    // 2. Comprobar si el usuario ya estaba suscrito antes
+    const pushKey = "sello:push:" + handle;
+    if (localStorage.getItem(pushKey) === "1") setPushOk(true);
+    // 3. Si el negocio tiene ubicación, detectar proximidad
+    if (!negocio.lat || !negocio.lng) return;
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const dist = calcDist(pos.coords.latitude, pos.coords.longitude, negocio.lat, negocio.lng);
+      if (dist <= (negocio.radio_metros || 300)) {
+        setCerca(true);
+        // Si está cerca y no está suscrito, mostrar el banner de suscripción
+        if (!localStorage.getItem(pushKey)) setTimeout(() => setPushBanner(true), 1500);
+      }
+    }, () => {}, { timeout: 5000, maximumAge: 60000 });
+  }, [handle, negocio.lat, negocio.lng]);
+
+  // Distancia entre dos coordenadas en metros (fórmula de Haversine).
+  function calcDist(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // Suscribe al usuario a las notificaciones push de este negocio.
+  async function suscribirPush() {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) { alert("Push no configurado aún"); return; }
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+      await fetch("/api/push", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscription: sub.toJSON(), negocio_id: negocio.id }),
+      });
+      localStorage.setItem("sello:push:" + handle, "1");
+      setPushOk(true); setPushBanner(false);
+    } catch (e) {
+      alert("No se pudo activar las notificaciones: " + e.message);
+    }
+  }
+
+  // Convierte la VAPID public key de base64url a Uint8Array (requerido por pushManager).
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = window.atob(base64);
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  }
 
   // Refresca el estado al abrir el QR (el staff pudo haber sellado)
   async function refrescar() {

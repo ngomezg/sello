@@ -172,3 +172,52 @@
 .url-alt summary{cursor:pointer;padding:4px 0;user-select:none}
 .url-alt summary:hover{color:var(--primary)}
 .url-alt .inp{margin-top:8px}
+
+/* ── Configuración ── */
+.cfg-title{font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:.5px;
+  text-transform:uppercase;margin:0 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.inp textarea,.inp[rows]{resize:vertical}
+textarea.inp{resize:vertical;font-family:inherit}
+.login-ok{background:#e3f3e6;color:#1f7a3d;border-radius:10px;padding:10px 14px;
+  font-size:13px;font-weight:600}
+
+/* ── Promos ── */
+.promo-row{display:flex;align-items:center;gap:10px;padding:12px 0;
+  border-bottom:1px solid var(--line)}
+.promo-row:last-child{border-bottom:none}
+.promo-emoji{font-size:24px;width:36px;text-align:center;flex-shrink:0}
+.promo-info{flex:1;min-width:0}
+.promo-info b{font-size:14px;display:block}
+.promo-info small{font-size:12px;color:var(--ink2)}
+.off{opacity:.45;text-decoration:line-through}
+
+/* ── Configuración del negocio ── */
+.cfg-section{background:#fff;border:1px solid #e7d9bf;border-radius:16px;
+  padding:18px 20px;margin-bottom:14px}
+.cfg-title{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 14px;
+  display:flex;align-items:center;gap:8px}
+.cfg-badge{font-size:10px;background:#fdf0d8;color:#9a6a0a;padding:2px 8px;
+  border-radius:99px;font-weight:600}
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.cfg-link-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:#f5f0e8;border-radius:10px;padding:10px 14px}
+.cfg-link-url{flex:1;font-size:12px;font-family:'Space Mono',monospace;
+  color:var(--primary);word-break:break-all}
+.cfg-color-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.color-pick{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);
+  padding:2px;cursor:pointer;background:none}
+.color-preview{flex:1;border-radius:10px;padding:10px 16px;display:flex;
+  align-items:center;gap:10px;font-size:20px}
+.color-preview b{font-size:14px}
+
+/* Vista previa de la tarjeta de sellos */
+.sello-preview{background:#f9f4ee;border-radius:12px;padding:14px;margin-top:12px;
+  display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.sp-dot{width:28px;height:28px;border-radius:50%}
+.sp-on{background:var(--primary)}
+.sp-off{border:2px dashed #c8b89a;background:transparent}
+.sp-label{width:100%;font-size:12px;color:var(--ink2);margin:4px 0 0}
+
+/* Fila de URL de Google Maps */
+.cfg-maps-row{display:flex;gap:8px}
+.cfg-maps-row .inp{flex:1}
