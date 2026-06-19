@@ -275,3 +275,105 @@ textarea.inp{resize:vertical;font-family:inherit}
   color:var(--primary)}
 .hist-info b{font-size:13px;display:block;color:var(--ink)}
 .hist-info small{font-size:11px;color:var(--ink2)}
+
+/* ── QR imprimible ── */
+.qr-sheet{
+  background:#fff;
+  border:1px solid #e7d9bf;
+  border-radius:20px;
+  overflow:hidden;
+  max-width:420px;
+  margin:0 auto;
+  box-shadow:0 4px 32px rgba(0,0,0,.08);
+}
+.qr-sheet-top{
+  background:var(--color,#7A1B2E);
+  padding:28px 24px 22px;
+  text-align:center;
+  color:#fff;
+}
+.qr-sheet-emoji{font-size:48px;display:block;margin-bottom:8px;line-height:1}
+.qr-sheet-nombre{
+  font-family:'Fraunces',serif;
+  font-size:26px;font-weight:700;
+  margin:0 0 4px;color:#fff;
+}
+.qr-sheet-ciudad{font-size:13px;opacity:.8;margin:0;color:#fff}
+
+.qr-sheet-body{
+  padding:24px 28px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  text-align:center;
+}
+.qr-sheet-cta{
+  font-family:'Fraunces',serif;
+  font-size:20px;font-weight:700;
+  color:#241B14;margin:0;
+}
+.qr-sheet-sub{
+  font-size:13px;color:#6b5c4e;margin:0;
+}
+.qr-sheet-qr{
+  padding:16px;
+  border:3px solid #241B14;
+  border-radius:16px;
+  background:#fff;
+  display:inline-block;
+}
+.qr-sheet-premio{
+  border:2px solid var(--color,#7A1B2E);
+  border-radius:12px;
+  padding:12px 20px;
+  text-align:center;
+  width:100%;
+  box-sizing:border-box;
+}
+.qr-sheet-meta{font-size:13px;color:#6b5c4e;display:block;margin-bottom:4px}
+.qr-sheet-reward{
+  font-family:'Fraunces',serif;
+  font-size:16px;font-weight:700;
+  color:#241B14;
+}
+
+/* Pasos */
+.qr-sheet-steps{
+  display:flex;align-items:center;gap:8px;
+  flex-wrap:wrap;justify-content:center;
+  width:100%;
+}
+.qr-step{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b5c4e}
+.qr-step-num{
+  width:22px;height:22px;border-radius:50%;
+  color:#fff;font-weight:700;font-size:11px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.qr-step-sep{font-size:14px;color:#c8b89a}
+
+.qr-sheet-foot{
+  border-top:1px solid #f0e8d8;
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#faf6ef;
+}
+.qr-sheet-url{font-size:9px;color:#a89880;font-family:'Space Mono',monospace;word-break:break-all}
+.qr-sheet-brand{font-size:10px;font-weight:700;color:#a89880;white-space:nowrap;margin-left:8px}
+
+/* ── Estilos de impresión ── */
+@media print {
+  /* Ocultar todo el chrome del panel */
+  .no-print, .pnav, .ph, .muted, nav, aside { display: none !important; }
+
+  /* La hoja ocupa toda la página */
+  body, html { margin:0; padding:0; background:#fff; }
+  .qr-sheet {
+    border:none !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    max-width:100% !important;
+    width:100%;
+    margin:0;
+    min-height:100vh;
+  }
+  .qr-sheet-top { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .qr-step-num  { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
