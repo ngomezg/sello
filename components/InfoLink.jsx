@@ -118,28 +118,33 @@ export default function InfoLink({ data, handle }) {
     })();
   }, [handle]);
 
-  // Detecta proximidad al negocio y registra el Service Worker para push.
-  // Solo se activa si el negocio tiene coordenadas (lat/lng) cargadas.
+  // PUSH: registra el SW y muestra el banner de suscripcion si el usuario
+  // aun no se ha suscrito. INDEPENDIENTE de la ubicacion del negocio.
   useEffect(() => {
-    // 1. Registrar Service Worker (necesario para push)
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
-    // 2. Comprobar si el usuario ya estaba suscrito antes
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
     const pushKey = "sello:push:" + handle;
-    if (localStorage.getItem(pushKey) === "1") setPushOk(true);
-    // 3. Si el negocio tiene ubicación, detectar proximidad
+    if (localStorage.getItem(pushKey) === "1") {
+      setPushOk(true);
+      return; // ya suscrito: no mostrar banner
+    }
+    // Muestra el banner 3 segundos despues de abrir el InfoLink
+    const t = setTimeout(() => setPushBanner(true), 3000);
+    return () => clearTimeout(t);
+  }, [handle]);
+
+  // GEO: detecta proximidad SOLO si el negocio tiene coordenadas cargadas.
+  useEffect(() => {
     if (!negocio.lat || !negocio.lng) return;
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {
-      const dist = calcDist(pos.coords.latitude, pos.coords.longitude, negocio.lat, negocio.lng);
-      if (dist <= (negocio.radio_metros || 300)) {
-        setCerca(true);
-        // Si está cerca y no está suscrito, mostrar el banner de suscripción
-        if (!localStorage.getItem(pushKey)) setTimeout(() => setPushBanner(true), 1500);
-      }
+      const dist = calcDist(
+        pos.coords.latitude, pos.coords.longitude,
+        negocio.lat, negocio.lng
+      );
+      if (dist <= (negocio.radio_metros || 300)) setCerca(true);
     }, () => {}, { timeout: 5000, maximumAge: 60000 });
-  }, [handle, negocio.lat, negocio.lng]);
+  }, [negocio.lat, negocio.lng]);
 
   // Distancia entre dos coordenadas en metros (fórmula de Haversine).
   function calcDist(lat1, lon1, lat2, lon2) {
