@@ -221,3 +221,29 @@ textarea.inp{resize:vertical;font-family:inherit}
 /* Fila de URL de Google Maps */
 .cfg-maps-row{display:flex;gap:8px}
 .cfg-maps-row .inp{flex:1}
+
+/* ── Promos mejoradas ── */
+.promo-empty{text-align:center;padding:48px 24px;color:var(--ink2);
+  display:flex;flex-direction:column;align-items:center;gap:12px}
+.promo-empty p{font-size:14px;line-height:1.6;margin:0}
+
+.promo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.promo-card{background:#fff;border:1px solid #e7d9bf;border-radius:14px;
+  overflow:hidden;transition:opacity .2s}
+.promo-off{opacity:.55}
+.promo-preview{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  border-left:4px solid var(--pc,#7A1B2E)}
+.promo-preview-emoji{font-size:28px;flex-shrink:0}
+.promo-preview b{font-size:14px;display:block;color:var(--ink)}
+.promo-preview small{font-size:12px;color:var(--ink2);display:block;margin-top:2px}
+.promo-card-foot{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;border-top:1px solid #f0e8d8;background:#faf6ef}
+
+/* Selector de emojis */
+.emoji-sel-btn{font-size:28px;padding:6px 10px;border:1px solid var(--line);
+  border-radius:10px;background:#faf6ef;cursor:pointer;line-height:1}
+.emoji-picker{display:flex;flex-wrap:wrap;gap:6px;background:#faf6ef;
+  border-radius:10px;padding:10px;margin-bottom:10px;border:1px solid var(--line)}
+.emoji-opt{font-size:22px;padding:4px 6px;border-radius:7px;border:none;
+  background:transparent;cursor:pointer;transition:background .15s}
+.emoji-opt:hover{background:#e7d9bf}
