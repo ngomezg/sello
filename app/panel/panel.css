@@ -377,3 +377,11 @@ textarea.inp{resize:vertical;font-family:inherit}
   .qr-sheet-top { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .qr-step-num  { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ── QR en Pagos ── */
+.btn-mini.qr{background:#3B6D9A}
+.qr-admin-card{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:#f5f0e8;border-radius:12px;margin-bottom:4px;
+  border-left:4px solid var(--c,#7A1B2E)}
+.qr-admin-card b{display:block;font-size:15px;color:var(--ink)}
+.qr-admin-card small{font-size:12px;color:var(--ink2)}
