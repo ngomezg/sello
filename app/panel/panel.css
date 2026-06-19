@@ -247,3 +247,31 @@ textarea.inp{resize:vertical;font-family:inherit}
 .emoji-opt{font-size:22px;padding:4px 6px;border-radius:7px;border:none;
   background:transparent;cursor:pointer;transition:background .15s}
 .emoji-opt:hover{background:#e7d9bf}
+
+/* ── CRM mejorado ── */
+.crm-click{cursor:pointer;transition:background .15s}
+.crm-click:hover{background:#faf6ef}
+
+.crm-summary{display:flex;gap:8px;margin-bottom:14px}
+.crm-stat{flex:1;background:#f5f0e8;border-radius:10px;padding:10px;text-align:center}
+.crm-stat span{font-size:22px;font-weight:700;color:var(--primary);display:block}
+.crm-stat small{font-size:11px;color:var(--ink2)}
+
+.crm-tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.crm-tab{display:flex;align-items:center;gap:5px;padding:7px 16px;border-radius:9px;
+  font-size:13px;font-weight:600;border:1px solid var(--line);background:transparent;
+  color:var(--ink2);cursor:pointer;transition:all .15s}
+.crm-tab.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.crm-tab-body{display:flex;flex-direction:column;gap:2px}
+
+.sheet-tall{max-height:90vh;overflow-y:auto}
+
+/* Historial de sellos */
+.hist-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--line)}
+.hist-row:last-child{border-bottom:none}
+.hist-dot{width:30px;height:30px;border-radius:50%;background:#f5f0e8;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  color:var(--primary)}
+.hist-info b{font-size:13px;display:block;color:var(--ink)}
+.hist-info small{font-size:11px;color:var(--ink2)}
