@@ -27,7 +27,8 @@ export default function InfoLink({ data, handle }) {
   const [premios, setPremios] = useState(0);
   const [pushOk, setPushOk] = useState(false);       // ya suscrito
   const [cerca, setCerca] = useState(false);          // está cerca del negocio
-  const [pushBanner, setPushBanner] = useState(false); // mostrar banner de suscripción
+  const [pushBanner, setPushBanner] = useState(false); // mostrar banner de suscripción push
+  const [iosHint, setIosHint] = useState(false);      // mostrar hint de instalación en iPhone
 
   const [activeCat, setActiveCat] = useState(categorias[0]?.id);
   const [q, setQ] = useState("");
@@ -118,19 +119,33 @@ export default function InfoLink({ data, handle }) {
     })();
   }, [handle]);
 
-  // PUSH: registra el SW y muestra el banner de suscripcion si el usuario
-  // aun no se ha suscrito. INDEPENDIENTE de la ubicacion del negocio.
+  // PUSH: registra el SW y gestiona banners de suscripcion.
+  // En iOS Safari puro (sin PWA instalada), muestra el hint de instalacion.
+  // En todos los demas casos, muestra el banner de push normal.
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     navigator.serviceWorker.register("/sw.js").catch(() => {});
+
     const pushKey = "sello:push:" + handle;
     if (localStorage.getItem(pushKey) === "1") {
-      setPushOk(true);
-      return; // ya suscrito: no mostrar banner
+      setPushOk(true); return;
     }
-    // Muestra el banner 3 segundos despues de abrir el InfoLink
-    const t = setTimeout(() => setPushBanner(true), 3000);
-    return () => clearTimeout(t);
+
+    // Detectar si es iOS
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // Detectar si ya esta instalado como PWA (standalone)
+    const isPwa = window.navigator.standalone === true ||
+                  window.matchMedia("(display-mode: standalone)").matches;
+
+    setTimeout(() => {
+      if (isIos && !isPwa) {
+        // iPhone en Safari normal: mostrar hint de instalacion
+        setIosHint(true);
+      } else {
+        // Android o iPhone con PWA instalada: mostrar banner de push
+        setPushBanner(true);
+      }
+    }, 3000);
   }, [handle]);
 
   // GEO: detecta proximidad SOLO si el negocio tiene coordenadas cargadas.
@@ -226,6 +241,42 @@ export default function InfoLink({ data, handle }) {
 
   return (
     <div className="app">
+
+      {/* Banner: cliente está cerca del negocio (solo si hay coords) */}
+      {cerca && (
+        <div className="cerca-banner">
+          📍 ¡Estás cerca de <b>{negocio.nombre}</b>! Ideal para sumar sellos.
+        </div>
+      )}
+
+      {/* Android / PWA: banner de suscripcion push */}
+      {pushBanner && !pushOk && (
+        <div className="push-banner">
+          <div className="push-banner-text">
+            <b>🔔 Recibe notificaciones</b>
+            <small>Entérate de promos y novedades de {negocio.nombre}</small>
+          </div>
+          <div className="push-banner-btns">
+            <button className="push-btn-yes" onClick={suscribirPush}>Activar</button>
+            <button className="push-btn-no" onClick={() => setPushBanner(false)}>Ahora no</button>
+          </div>
+        </div>
+      )}
+
+      {/* iPhone Safari: instrucciones para instalar como PWA */}
+      {iosHint && (
+        <div className="ios-hint">
+          <div className="ios-hint-body">
+            <span style={{fontSize:22}}>📲</span>
+            <div>
+              <b>Instala esta app para recibir notificaciones</b>
+              <small>Toca <b>Compartir</b> ↗ luego <b>"Añadir a pantalla de inicio"</b></small>
+            </div>
+          </div>
+          <button className="push-btn-no" onClick={() => setIosHint(false)}>✕</button>
+        </div>
+      )}
+
       <div className="biz-head">
         <div className="biz-logo">{negocio.logo_emoji || <Coffee size={22} />}</div>
         <div>
