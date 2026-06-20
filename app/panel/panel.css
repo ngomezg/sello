@@ -385,3 +385,16 @@ textarea.inp{resize:vertical;font-family:inherit}
   border-left:4px solid var(--c,#7A1B2E)}
 .qr-admin-card b{display:block;font-size:15px;color:var(--ink)}
 .qr-admin-card small{font-size:12px;color:var(--ink2)}
+
+/* ── Selector de rango de fechas ── */
+.rango-wrap{margin-bottom:16px;display:flex;flex-direction:column;gap:10px}
+.rango-presets{display:flex;gap:6px;flex-wrap:wrap}
+.rango-btn{
+  padding:7px 14px;border-radius:99px;font-size:13px;font-weight:600;
+  border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;
+  transition:all .15s;
+}
+.rango-btn:hover{border-color:var(--primary);color:var(--primary)}
+.rango-btn.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.rango-custom{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rango-custom .inp.slim{padding:8px 10px;font-size:13px;flex:1;min-width:120px}
