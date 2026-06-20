@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 import { QRCodeCanvas } from "qrcode.react";
-import { Stamp, Plus, X, Copy, Check, Pencil, Clock, ChevronRight } from "lucide-react";
+import { Stamp, Plus, X, Copy, Check, Pencil, Clock, ChevronRight, Download } from "lucide-react";
 
 const fecha = (d) => d ? new Date(d).toLocaleDateString("es-CO", { day:"2-digit", month:"short", year:"numeric" }) : "—";
 const hora  = (d) => d ? new Date(d).toLocaleTimeString("es-CO", { hour:"2-digit", minute:"2-digit" }) : "";
@@ -112,14 +112,47 @@ export default function Clientes() {
 
   const origenLabel = (o) => ({ manual:"Sellado manual", pedido:"Pedido", qr:"QR" }[o] || o || "—");
 
+  // Exporta todos los clientes como CSV descargable.
+  // Se genera en el cliente con los datos ya cargados — sin llamada extra a la API.
+  function exportarCSV() {
+    const encabezado = ["Nombre","Teléfono","Email","Cumpleaños","Sellos","Premios","Última visita"];
+    const filas = rows.map((r) => [
+      r.clientes?.nombre    || "Invitado",
+      r.clientes?.telefono  || "",
+      r.clientes?.email     || "",
+      r.clientes?.cumple    || "",
+      r.sellos,
+      r.premios_ganados,
+      r.ultima_visita ? new Date(r.ultima_visita).toLocaleDateString("es-CO") : "",
+    ]);
+    const csv = [encabezado, ...filas]
+      .map((fila) => fila.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url;
+    a.download = `clientes-${negocio?.handle || "sello"}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`${rows.length} clientes exportados`);
+  }
+
   return (
     <>
       <header className="ph">
         <h1>Clientes</h1>
-        <button className="btn-primary sm"
-          onClick={() => { setShowForm(true); setNuevaUrl(""); setErr(""); }}>
-          <Plus size={15} /> Nuevo cliente
-        </button>
+        <div style={{ display:"flex", gap:8 }}>
+          {rows.length > 0 && (
+            <button className="btn-ghost sm" onClick={exportarCSV} title="Exportar a CSV">
+              <Download size={15} /> CSV
+            </button>
+          )}
+          <button className="btn-primary sm"
+            onClick={() => { setShowForm(true); setNuevaUrl(""); setErr(""); }}>
+            <Plus size={15} /> Nuevo cliente
+          </button>
+        </div>
       </header>
 
       {/* Lista de clientes */}
