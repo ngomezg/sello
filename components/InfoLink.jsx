@@ -25,6 +25,8 @@ export default function InfoLink({ data, handle }) {
   const [token, setToken] = useState(null);
   const [sellos, setSellos] = useState(0);
   const [premios, setPremios] = useState(0);
+  const [refCode, setRefCode] = useState("");         // código de referido del cliente
+  const [refGanado, setRefGanado] = useState(false);  // banner "¡ganaste un sello por referir!"
   const [pushOk, setPushOk] = useState(false);       // ya suscrito
   const [cerca, setCerca] = useState(false);          // está cerca del negocio
   const [pushBanner, setPushBanner] = useState(false); // mostrar banner de suscripción push
@@ -51,8 +53,11 @@ export default function InfoLink({ data, handle }) {
 
   // "Compartir": usa el share nativo del teléfono si existe; si no, copia el link.
   async function compartir() {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `¡Mira mi tarjeta de fidelidad en ${negocio.nombre}!`;
+    // Incluye el ref_code del cliente en el URL de compartir.
+    // Cuando alguien lo abra, ambos ganan 1 sello extra automáticamente.
+    const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const url  = refCode ? `${base}?ref=${refCode}` : base;
+    const text = `¡Mira mi tarjeta de fidelidad en ${negocio.nombre}! Úsala y los dos ganamos un sello extra 🎁`;
     try {
       if (navigator.share) {
         await navigator.share({ title: negocio.nombre, text, url });
@@ -99,21 +104,31 @@ export default function InfoLink({ data, handle }) {
           }
         }
 
+        // Leer ?ref= de la URL (código de quien compartió el link)
+        const refParam = new URLSearchParams(window.location.search).get("ref") || "";
+
         let t = localStorage.getItem(key);
         if (t) {
           const r = await fetch("/api/tarjeta", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ handle, token: t }),
+            body: JSON.stringify({ handle, token: t, ref: refParam || undefined }),
           }).then((x) => x.json());
-          if (r && !r.error) { setSellos(r.sellos); setPremios(r.premios_ganados); setToken(t); return; }
+          if (r && !r.error) {
+            setSellos(r.sellos); setPremios(r.premios_ganados);
+            setToken(t); if (r.ref_code) setRefCode(r.ref_code);
+            return;
+          }
         }
-        const c = await fetch("/api/tarjeta", {
+        const cr = await fetch("/api/tarjeta", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ handle }),
+          body: JSON.stringify({ handle, ref: refParam || undefined }),
         }).then((x) => x.json());
-        if (c?.token) {
-          localStorage.setItem(key, c.token);
-          setToken(c.token); setSellos(c.sellos); setPremios(c.premios_ganados);
+        if (cr?.token) {
+          localStorage.setItem(key, cr.token);
+          setToken(cr.token); setSellos(cr.sellos); setPremios(cr.premios_ganados);
+          if (cr.ref_code) setRefCode(cr.ref_code);
+          // Si vino con ?ref= y se procesó, ambos ganaron sello
+          if (refParam) setRefGanado(true);
         }
       } catch { /* si falla, sigue como escaparate */ }
     })();
@@ -260,6 +275,16 @@ export default function InfoLink({ data, handle }) {
             <button className="push-btn-yes" onClick={suscribirPush}>Activar</button>
             <button className="push-btn-no" onClick={() => setPushBanner(false)}>Ahora no</button>
           </div>
+        </div>
+      )}
+
+      {/* Banner: referido reclamado — aparece solo una vez al abrir con ?ref= */}
+      {refGanado && (
+        <div className="cerca-banner" style={{ background:"#1f7a3d" }}>
+          🎁 ¡Ganaste un sello extra por venir con un referido! Tu amigo también ganó uno.
+          <button style={{ marginLeft:12, background:"none", border:"none",
+            color:"#fff", cursor:"pointer", fontSize:16 }}
+            onClick={() => setRefGanado(false)}>✕</button>
         </div>
       )}
 
