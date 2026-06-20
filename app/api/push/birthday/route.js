@@ -14,27 +14,6 @@ function initVapid() {
   return true;
 }
 
-// POST /api/push — guarda la suscripción de un cliente.
-export async function POST(req) {
-  try {
-    const { subscription, negocio_id, cliente_id } = await req.json();
-    if (!subscription?.endpoint)
-      return NextResponse.json({ error: "falta endpoint" }, { status: 400 });
-    await supabaseAdmin.from("push_subscriptions").upsert({
-      negocio_id,
-      cliente_id: cliente_id || null,
-      endpoint: subscription.endpoint,
-      p256dh:   subscription.keys.p256dh,
-      auth:     subscription.keys.auth,
-    }, { onConflict: "endpoint" });
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
-  }
-}
-
-// POST /api/push/birthday — Recibe POST de n8n con body JSON
-// Envía un push a todos los suscriptores del negocio.
 export async function POST(req) {
   try {
     if (!initVapid())
