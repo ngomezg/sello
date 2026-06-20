@@ -20,7 +20,7 @@ export default function Clientes() {
 
   // Nuevo cliente
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState({ nombre:"", telefono:"", email:"" });
+  const [form, setForm]         = useState({ nombre:"", telefono:"", email:"", cumple:"" });
   const [nuevaUrl, setNuevaUrl] = useState("");
   const [copiado, setCopiado]   = useState(false);
   const [err, setErr]           = useState("");
@@ -91,14 +91,15 @@ export default function Clientes() {
     try {
       const { data: c, error: e1 } = await supabase.from("clientes")
         .insert({ negocio_id: negocio.id, nombre: form.nombre.trim(),
-          telefono: form.telefono.trim() || null, email: form.email.trim() || null })
+          telefono: form.telefono.trim() || null, email: form.email.trim() || null,
+          cumple: form.cumple || null })
         .select().single();
       if (e1) throw e1;
       const { data: t, error: e2 } = await supabase.from("tarjetas")
         .insert({ cliente_id: c.id, negocio_id: negocio.id }).select().single();
       if (e2) throw e2;
       setNuevaUrl(`${window.location.origin}/i/${negocio.handle}/menu?t=${t.token}`);
-      setForm({ nombre:"", telefono:"", email:"" });
+      setForm({ nombre:"", telefono:"", email:"", cumple:"" });
       cargar(negocio.id);
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -269,6 +270,9 @@ export default function Clientes() {
                 <label className="lbl">Correo (opcional)</label>
                 <input className="inp" value={form.email}
                   onChange={(e) => setForm({...form, email: e.target.value})} />
+                <label className="lbl">Fecha de cumpleaños (opcional)</label>
+                <input className="inp" type="date" value={form.cumple}
+                  onChange={(e) => setForm({...form, cumple: e.target.value})} />
                 {err && <div className="login-err">{err}</div>}
                 <button className="btn-primary big" onClick={crearCliente} disabled={busy}>
                   {busy ? "Creando…" : "Crear cliente y tarjeta"}
